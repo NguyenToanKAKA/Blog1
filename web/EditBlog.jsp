@@ -58,14 +58,13 @@
                 </div>
 
                 <div class="mt-3 input-group mb-3">
-
                     <div class="container">
                         <img src="assets/blog/${product.image}" id="oldimg" class="img-thumbnail row" alt="...">    
                         <div class="row">
-                            <input type="file" class="form-control mt-2 col-9" name="image" id="fileInputBlogImage" aria-describedby="inputGroupFileAddon03" aria-label="Upload">
-
+                            <input type="file" class="form-control mt-2 col-9" id="fileInputBlogImage" aria-describedby="inputGroupFileAddon03" aria-label="Upload">
                         </div>
                     </div>
+                        <input type="hidden" name="image" value="${product.image}" id="image" />
 
                 </div>
 
@@ -99,6 +98,9 @@
                             var oldimg = document.getElementById('oldimg');
                             oldimg.src = 'assets/blog/' + fileName;
                             console.log(fileName);
+                            
+                            var img = document.getElementById('image');
+                            img.value = fileName;
                         }
                     };
                     xhr.send(formData);

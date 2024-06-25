@@ -21,6 +21,21 @@ import java.util.logging.Logger;
  */
 public class CommentDAO extends DBContext implements BaseDAO<Comment> {
 
+    
+     public boolean updateComment(int commentId, String content) {
+        String sql = "UPDATE Comments SET CommentText = ? WHERE CommentID = ?";
+        try {
+             PreparedStatement ps = getConnection().prepareStatement(sql);
+             ps.setString(1, content);
+            ps.setInt(2, commentId);
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+     
      public int getCountByBlog(int blogId) {
         int result = 0;
         String sql = "SELECT COUNT(*) FROM Comments WHERE BlogID = ? ";

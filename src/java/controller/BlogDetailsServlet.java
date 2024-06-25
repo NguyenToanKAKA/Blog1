@@ -38,6 +38,7 @@ public class BlogDetailsServlet extends HttpServlet {
         // Lấy thông tin người viết blog
         UserDTO author = userDAO.getUserById(blog.getUserId());
 
+        
         // Lấy danh sách bài viết ảnh hưởng
         List<BlogDTO> influencePosts = blogService.getTop3BlogsByLikes();
 

@@ -35,7 +35,7 @@
         <link rel="stylesheet" href="assets/css/icontop.css">
         <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
 
-
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
         <link rel="stylesheet" href="assets/css/style.css">
 
@@ -114,7 +114,103 @@
             .report-button:hover {
                 background-color: darkred;
             }
+
+            .liked {
+                color: red;
+            }
+
+            .fa-heart {
+                cursor: pointer;
+            }
         </style>
+
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-CjSoe/3R+BlI/YfXEBos+tF5LuUfwWUGsHc9d/jdSvHt1oM8uDbbv5U3u6W7czmT" crossorigin="anonymous"></script>
+        <script>
+            $(document).ready(function () {
+                var uid = "${sessionScope.account.idUser}";
+                var bid = "${blog.blogId}";
+
+                // Check like status on page load
+                $.ajax({
+                    url: "${pageContext.request.contextPath}/checkLikeStatus",
+                    type: "GET",
+                    data: {
+                        uid: uid,
+                        bid: bid
+                    },
+                    success: function (response) {
+                        if (response) {
+                            $("#likeIcon").addClass("fas liked").removeClass("far");
+                        } else {
+                            $("#likeIcon").addClass("far").removeClass("fas liked");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error: " + error);
+                    }
+                });
+
+                // Handle like button click
+                $(".like-button").on("click", function (e) {
+                    e.preventDefault();
+
+                    $.ajax({
+                        url: "${pageContext.request.contextPath}/likeBlogs",
+                        type: "GET",
+                        data: {
+                            uid: uid,
+                            bid: bid
+                        },
+                        success: function (response) {
+                            // Update the like count in the UI
+                            $("#likeCount").text(response);
+                            $("#likeIcon").toggleClass("fas liked").toggleClass("far");
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error: " + error);
+                        }
+                    });
+                });
+
+                // Handle edit comment button click
+                $(".btn-edit").on("click", function () {
+                    var commentId = $(this).data("comment-id");
+                    var content = $(this).closest(".single-comment").find(".comment").text();
+                    $("#editCommentContent").val(content);
+                    $("#editCommentId").val(commentId);
+                    $("#editCommentModal").modal("show");
+                });
+
+                // Handle save comment button click
+                $("#saveCommentBtn").on("click", function () {
+                    var commentId = $("#editCommentId").val();
+                    var content = $("#editCommentContent").val();
+
+                    $.ajax({
+                        url: "${pageContext.request.contextPath}/editComment",
+                        type: "POST",
+                        data: {
+                            commentId: commentId,
+                            content: content
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                // Update the comment content in the DOM
+                                $("button[data-comment-id='" + commentId + "']").closest(".single-comment").find(".comment").text(content);
+                                $("#editCommentModal").modal("hide");
+                            } else {
+                                alert("Failed to update comment.");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error: " + error);
+                        }
+                    });
+                });
+            });
+        </script>
     </head>
 
     <body>
@@ -129,7 +225,7 @@
         </div>  
         <!-- ***** Preloader End ***** -->
 
-      
+
 
         <!-- Page Content -->
         <div class="page-heading about-heading header-text" style="background-image: url(assets/images/heading-6-1920x500.jpg);">
@@ -169,8 +265,12 @@
                                 <div class="user-details row align-items-center" style="margin-top: 30px">
                                     <div class="comment-wrap col-lg-12" >
                                         <ul class="list-inline">
-                                            <li class="list-inline-item"><a href="${pageContext.request.contextPath}/likeBlogs?uid=${sessionScope.account.idUser}&&bid=${blog.blogId}"><span class="lnr lnr-heart"></span> ${blog.nLike}
-                                                    likes</a></li>
+                                            <li class="list-inline-item">
+                                                <a href="#" class="like-button" data-uid="${sessionScope.account.idUser}" data-bid="${blog.blogId}">
+                                                    <i id="likeIcon" class="far fa-heart"></i>
+                                                    <span id="likeCount">${blog.nLike}</span> likes
+                                                </a>
+                                            </li>
                                             <li class="list-inline-item"><a href="#"><span class="lnr lnr-bubble"></span> ${blog.nCmt}
                                                     Comments</a></li>
                                             <li class="list-inline-item"><a href="#"><span class="lnr lnr-history"></span>
@@ -210,50 +310,42 @@
 
                             <!-- End nav Area -->
 
+
                             <!-- Start comment-sec Area -->
                             <section class="comment-sec-area pt-80 pb-80">
                                 <div class="container">
                                     <div class="row flex-column">
-                                        <h5 class="text-uppercase pb-80"><span class="lnr lnr-bubble"></span>   ${blog.nCmt} Comments</h5>
+                                        <h5 class="text-uppercase pb-80"><span class="lnr lnr-bubble"></span> ${blog.nCmt} Comments</h5>
 
                                         <div class="comment-list">
-                                            <c:forEach items    ="${blog.cmt}" var="c" >
+                                            <c:forEach items="${blog.cmt}" var="c">
                                                 <div class="single-comment justify-content-between d-flex" style="margin-top:20px">
                                                     <div class="user justify-content-between d-flex">
                                                         <div class="thumb">
                                                             <img src="assets/avatars/${c.avatar}" alt="" style="width: 62px; height: 62px">
-                                                             <a class="report-button" href="reportComment?commentId=${c.commentId}&blogId=${blog.blogId}" onclick="return confirm('Are you sure you want to report this comment?')">Report</a>
+                                                            <a class="report-button" href="reportComment?commentId=${c.commentId}&blogId=${blog.blogId}" onclick="return confirm('Are you sure you want to report this comment?')">Report</a>
                                                         </div>
                                                         <div class="desc">
-                                                            <h5><a >${c.uFullName}</a></h5>
-                                                            <p class="date"><i class="zmdi zmdi-calendar-alt"></i>  ${c.date} </p>
-                                                            <p class="comment">
-                                                                ${c.content} 
-
-                                                            </p>
+                                                            <h5><a>${c.uFullName}</a></h5>
+                                                            <p class="date"><i class="zmdi zmdi-calendar-alt"></i> ${c.date} </p>
+                                                            <p class="comment">${c.content}</p>
                                                         </div>
                                                     </div>
                                                     <div class="reply-btn">
                                                         <c:if test="${sessionScope.account.idUser eq c.userId}">
-                                                            <a href="#" class="btn-reply text-uppercase">Edit</a>
+                                                            <button type="button" class="btn-reply text-uppercase btn-edit" data-comment-id="${c.commentId}">Edit</button>
                                                         </c:if>
                                                         <div class="report-options">
-
-                                                            <a href="#2">Update</a>
                                                             <a href="deleteComment?commentId=${c.commentId}&blogId=${blog.blogId}" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</a>
                                                         </div>
                                                     </div>
-
                                                 </div>
                                             </c:forEach>
                                         </div>
-
-
-
-
                                     </div>
                                 </div>
                             </section>
+
                             <!-- End comment-sec Area -->
 
 
@@ -350,6 +442,30 @@
 
         </section>
         <!-- End blog-posts Area -->
+
+        <!-- Edit Comment Modal -->
+        <div class="modal fade" id="editCommentModal" tabindex="-1" role="dialog" aria-labelledby="editCommentModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editCommentModalLabel">Edit Comment</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editCommentId">
+                        <textarea id="editCommentContent" class="form-control" rows="5"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="saveCommentBtn">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
 
         <!-- Bootstrap core JavaScript -->
         <script src="vendor/jquery/jquery.min.js"></script>
